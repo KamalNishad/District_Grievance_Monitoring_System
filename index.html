@@ -243,7 +243,7 @@
       #app-shell { height:auto; min-height:100vh; overflow:visible; }
       main { padding: 24px 20px; overflow:visible; }
     }
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
       header { align-items:flex-start; gap:14px; }
       .user-profile span { display:none; }
       .logo-title { font-size:15px; }
@@ -262,6 +262,11 @@
       .kpi-grid { grid-template-columns:1fr; }
       .form-grid { grid-template-columns:1fr; }
       .kpi-card { padding:16px; }
+      .table-toolbar { padding: 12px; gap: 10px; }
+      .toolbar-search { width: 100%; flex: 1 1 100%; }
+      .toolbar-filters { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .toolbar-filters select { width: 100% !important; font-size: 13px; }
+      .toolbar-filters .btn-export { grid-column: 1 / -1; width: 100%; justify-content: center; padding: 10px; font-size: 13px; }
     }
 
     /* Forms */
@@ -286,10 +291,32 @@
       padding: 14px 18px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 14px;
       flex-wrap: wrap;
       background: #FAFAFA;
       border-bottom: 1px solid var(--border);
+    }
+    .toolbar-search {
+      flex: 1 1 260px;
+      min-width: 0;
+    }
+    .toolbar-search input {
+      width: 100%;
+    }
+    .toolbar-filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-responsive table {
+      min-width: 760px;
     }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
@@ -527,8 +554,10 @@
       <section id="view-list" style="display: none;">
         <div class="table-container">
           <div class="table-toolbar">
-            <input type="text" id="search-box" class="form-control" style="min-width: 260px;" placeholder="Search citizen, ID, village or issue..." oninput="renderGrievances()">
-            <div style="display: flex; gap: 10px;">
+            <div class="toolbar-search">
+              <input type="text" id="search-box" class="form-control" placeholder="Search citizen, ID, village or issue..." oninput="renderGrievances()">
+            </div>
+            <div class="toolbar-filters">
               <select id="filter-dept" class="form-control" style="width: 170px;" onchange="renderGrievances()">
                 <option value="All">All Departments</option>
                 <option value="Agriculture">Agriculture</option>
@@ -543,27 +572,29 @@
                 <option value="In Progress">In Progress</option>
                 <option value="Resolved">Resolved</option>
               </select>
-              <button class="btn btn-success" onclick="exportToExcel()">
+              <button class="btn btn-success btn-export" onclick="exportToExcel()">
                 <i class="fa-solid fa-file-excel"></i> Export (.xlsx)
               </button>
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Citizen Name</th>
-                <th>Contact</th>
-                <th>Village</th>
-                <th>Department</th>
-                <th>Priority</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="grievances-tbody"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Citizen Name</th>
+                  <th>Contact</th>
+                  <th>Village</th>
+                  <th>Department</th>
+                  <th>Priority</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="grievances-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </section>
     </main>
