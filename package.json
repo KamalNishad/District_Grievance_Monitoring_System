@@ -1,0 +1,13 @@
+{
+  "name": "district-grievance-monitoring-system",
+  "version": "1.0.0",
+  "description": "District Grievance Monitoring System developed for District Administration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}
