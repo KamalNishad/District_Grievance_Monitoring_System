@@ -27,10 +27,12 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background-color: #F3F6FA;
-      background-image: radial-gradient(circle at 14% 20%, rgba(15,76,129,.07), transparent 26%), radial-gradient(circle at 88% 80%, rgba(19,100,68,.06), transparent 28%);
+      min-height: 100dvh;
+      background-color: #EEF2F6;
+      background-image: radial-gradient(circle at 12% 16%, rgba(15,76,129,.08), transparent 30%), radial-gradient(circle at 88% 84%, rgba(19,100,68,.07), transparent 30%);
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .tricolour-line { display:flex; width:100%; height:5px; min-height:5px; flex:0 0 5px; }
     .tricolour-line span { display:block; flex:1 1 33.333%; height:5px; }
@@ -49,6 +51,9 @@
     .gov-features { display:grid; gap:14px; margin-top:auto; padding-top:35px; }
     .gov-feature { display:flex; gap:12px; align-items:center; color:#E5EEF7; font-size:13px; }
     .gov-feature i { width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.1); display:grid; place-items:center; color:#FFCC70; }
+    .gov-brand-header { display: flex; flex-direction: column; }
+    .gov-sub { display: none; }
+    .desktop-br { display: inline; }
     .login-box {
       background: #FFFFFF;
       width: 100%;
@@ -101,28 +106,7 @@
     .btn-accent { background-color: #F59E0B; color: #FFFFFF; }
     .btn-success { background-color: #10B981; color: #FFFFFF; }
 
-    @media (max-width: 900px) {
-      .login-stage { padding:18px; }
-      .login-shell { grid-template-columns:1fr; min-height:0; }
-      .gov-panel { padding:24px 28px; display:grid; grid-template-columns:auto 1fr; column-gap:16px; align-items:center; }
-      .gov-panel { background-position:center 42%; }
-      .gov-panel h1 { font-size:21px; margin:4px 0 0; }
-      .gov-kicker { align-self:end; }
-      .gov-panel > p, .gov-features { display:none; }
-      .gov-mark { width:50px; height:50px; font-size:21px; margin:0; grid-row:1 / span 2; }
-      .login-box { padding:30px 26px; }
-    }
-    @media (max-width: 460px) {
-      .login-stage { padding:12px; align-items:flex-start; }
-      .login-shell { width:100%; border-radius:13px; }
-      .gov-panel { padding:20px; }
-      .gov-panel h1 { font-size:18px; }
-      .gov-kicker { font-size:10px; }
-      .login-box { padding:25px 20px 28px; }
-      .login-box h2 { font-size:22px; }
-      .secure-label { font-size:10px; }
-      .login-footer { padding:8px 14px 12px; }
-    }
+
 
     /* App Shell */
     #app-shell { display: none; height: 100vh; min-height: 680px; flex-direction: column; overflow: hidden; }
@@ -429,6 +413,180 @@
     }
 
     @media (max-width: 768px) {
+      /* Mobile Login Screen Polish */
+      .login-stage {
+        align-items: flex-start !important;
+        justify-content: center !important;
+        padding: 14px 12px 28px !important;
+        min-height: 0 !important;
+      }
+      .login-shell {
+        width: 100% !important;
+        max-width: 440px !important;
+        margin: 0 auto;
+        border-radius: 16px !important;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12) !important;
+        grid-template-columns: 1fr !important;
+        min-height: 0 !important;
+      }
+      .gov-panel {
+        padding: 18px 16px 16px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+      }
+      .gov-brand-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 12px !important;
+      }
+      .gov-mark {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 19px !important;
+        margin-bottom: 0 !important;
+        flex-shrink: 0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.35) !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+      }
+      .gov-brand-text {
+        display: flex !important;
+        flex-direction: column !important;
+        min-width: 0 !important;
+      }
+      .gov-kicker {
+        font-size: 9.5px !important;
+        letter-spacing: 1px !important;
+        margin-bottom: 2px !important;
+        color: #FFCC70 !important;
+      }
+      .gov-panel h1 {
+        font-size: 16px !important;
+        line-height: 1.25 !important;
+        margin: 0 0 2px 0 !important;
+        font-weight: 750 !important;
+        color: #FFFFFF !important;
+      }
+      .desktop-br {
+        display: none !important;
+      }
+      .gov-sub {
+        display: block !important;
+        font-size: 10px !important;
+        color: #D7E4F0 !important;
+        line-height: 1.3 !important;
+      }
+      .gov-desc, .gov-features {
+        display: none !important;
+      }
+      .login-box {
+        padding: 22px 18px 24px !important;
+      }
+      .login-badge {
+        background: #E8F2FA !important;
+        color: #164A73 !important;
+        font-weight: 800 !important;
+        font-size: 10px !important;
+        letter-spacing: 0.6px !important;
+        padding: 5px 9px !important;
+      }
+      .secure-label {
+        font-size: 11px !important;
+        color: #16A34A !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+      }
+      .login-box h2 {
+        font-size: 21px !important;
+        font-weight: 750 !important;
+        margin: 14px 0 4px !important;
+        color: #10233F !important;
+      }
+      .login-box > p {
+        font-size: 12.5px !important;
+        line-height: 1.45 !important;
+        margin-bottom: 18px !important;
+        color: #64748B !important;
+      }
+      .form-group {
+        margin-bottom: 15px !important;
+      }
+      .form-group label {
+        font-size: 12.5px !important;
+        font-weight: 650 !important;
+        color: #334155 !important;
+        margin-bottom: 5px !important;
+      }
+      .input-wrap {
+        position: relative !important;
+        width: 100% !important;
+      }
+      .input-wrap > i {
+        position: absolute !important;
+        left: 14px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        color: #64748B !important;
+        font-size: 15px !important;
+        pointer-events: none !important;
+        z-index: 2 !important;
+      }
+      .input-wrap .form-control {
+        padding-left: 44px !important; /* Prevents text/icon collision on mobile */
+        padding-right: 14px !important;
+        height: 48px !important;
+        font-size: 15px !important;
+        background: #FBFCFE !important;
+        border: 1.5px solid #CBD5E1 !important;
+        border-radius: 9px !important;
+        color: #1E293B !important;
+      }
+      .input-wrap .form-control:focus {
+        border-color: #2563EB !important;
+        background: #FFFFFF !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+      }
+      .login-help {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        padding: 10px 12px !important;
+        margin: 2px 0 16px !important;
+        border: 1px solid #DCE6F1 !important;
+        border-radius: 8px !important;
+        background: #F4F8FC !important;
+        font-size: 11px !important;
+        line-height: 1.45 !important;
+        color: #475569 !important;
+      }
+      .login-btn {
+        width: 100% !important;
+        height: 48px !important;
+        background: #164A73 !important;
+        color: #FFFFFF !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        border-radius: 9px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        box-shadow: 0 6px 18px rgba(22, 74, 115, 0.22) !important;
+        border: none !important;
+        cursor: pointer !important;
+      }
+      .login-btn:active {
+        transform: scale(0.985) !important;
+      }
+      .login-footer {
+        padding: 12px 14px 20px !important;
+        font-size: 10.5px !important;
+        color: #64748B !important;
+        line-height: 1.5 !important;
+      }
+
+      /* App Shell & Header Polish */
       header { align-items:flex-start; gap:12px; padding: 12px 16px; }
       .user-profile span { display:none; }
       .logo-title { font-size:15px; }
@@ -440,8 +598,12 @@
       .dashboard-heading h1 { font-size:22px; }
       .dashboard-actions { width:100%; }
       .dashboard-actions .btn { flex:1; padding:9px; }
-      .kpi-grid { grid-template-columns:1fr; }
-      .kpi-card { padding:14px; }
+
+      /* Executive 2x2 KPI grid on mobile */
+      .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+      .kpi-card { padding: 12px 14px !important; border-radius: 12px !important; }
+      .kpi-card h2 { font-size: 22px !important; }
+      .kpi-card p { font-size: 11.5px !important; }
 
       /* Form mobile layout */
       .form-container {
@@ -529,10 +691,15 @@
     <div class="login-stage">
       <div class="login-shell">
         <section class="gov-panel">
-          <div class="gov-mark"><i class="fa-solid fa-landmark"></i></div>
-          <div class="gov-kicker">District Administration</div>
-          <h1>District Grievance<br>Monitoring System</h1>
-          <p>A unified administrative platform for transparent registration, monitoring and timely resolution of citizen grievances.</p>
+          <div class="gov-brand-header">
+            <div class="gov-mark"><i class="fa-solid fa-landmark"></i></div>
+            <div class="gov-brand-text">
+              <div class="gov-kicker">Government of Chhattisgarh</div>
+              <h1>District Grievance<br class="desktop-br"> Monitoring System</h1>
+              <div class="gov-sub">Office of the District Collector &amp; District Magistrate</div>
+            </div>
+          </div>
+          <p class="gov-desc">A unified administrative platform for transparent registration, monitoring and timely resolution of citizen grievances.</p>
           <div class="gov-features">
             <div class="gov-feature"><i class="fa-solid fa-shield-halved"></i><span>Secure access for authorised officials</span></div>
             <div class="gov-feature"><i class="fa-solid fa-chart-line"></i><span>Real-time grievance monitoring</span></div>
