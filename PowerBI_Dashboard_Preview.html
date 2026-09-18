@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power BI Desktop - District Development Monitoring Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --pbi-yellow: #F2C811;
+      --pbi-dark: #252423;
+      --pbi-gray: #EDEBE9;
+      --pbi-border: #D2D0CE;
+      --pbi-canvas: #F0F2F5;
+      --card-bg: #FFFFFF;
+      --accent-blue: #118DFF;
+      --accent-teal: #12239E;
+      --accent-green: #107C41;
+      --accent-red: #D83B01;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, sans-serif; }
+    body { background: #1B1A19; color: #252423; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Power BI Title Bar */
+    .pbi-title-bar {
+      background: #252423;
+      color: #FFFFFF;
+      padding: 6px 14px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #3B3A39;
+    }
+    .pbi-title-left { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .pbi-logo {
+      background: var(--pbi-yellow);
+      color: #000;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    /* Ribbon / Toolbar */
+    .pbi-ribbon {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--pbi-border);
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .ribbon-tabs { display: flex; gap: 16px; font-size: 12px; font-weight: 600; color: #605E5C; }
+    .ribbon-tabs span.active { color: #252423; border-bottom: 2px solid var(--pbi-yellow); padding-bottom: 4px; }
+    .ribbon-actions { display: flex; gap: 8px; }
+    .btn-pbi {
+      background: #F3F2F1;
+      border: 1px solid var(--pbi-border);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-pbi:hover { background: #EDEBE9; }
+    .btn-pbi-primary { background: var(--pbi-yellow); border-color: #E2B800; font-weight: 700; color: #000; }
+
+    /* Main Workspace */
+    .pbi-workspace {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 100px);
+      overflow: hidden;
+      background: var(--pbi-canvas);
+    }
+
+    /* Left Icon Bar */
+    .pbi-left-bar {
+      width: 44px;
+      background: #EDEBE9;
+      border-right: 1px solid var(--pbi-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 12px;
+      gap: 16px;
+      color: #605E5C;
+    }
+    .left-icon { font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; }
+    .left-icon.active { color: var(--pbi-dark); background: #FFFFFF; border-left: 3px solid var(--pbi-yellow); }
+
+    /* Canvas Area */
+    .pbi-canvas-area {
+      flex: 1;
+      padding: 16px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Filters Bar */
+    .filters-bar {
+      background: #FFFFFF;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--pbi-border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .filter-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .filter-item label { font-weight: 600; color: #605E5C; }
+    .filter-select {
+      padding: 4px 8px;
+      border: 1px solid var(--pbi-border);
+      border-radius: 4px;
+      font-size: 12px;
+      background: #FFFFFF;
+      outline: none;
+    }
+
+    /* Cards Grid */
+    .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+    .pbi-kpi-card {
+      background: #FFFFFF;
+      border: 1px solid var(--pbi-border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      position: relative;
+    }
+    .kpi-title { font-size: 10px; font-weight: 700; color: #605E5C; text-transform: uppercase; margin-bottom: 4px; }
+    .kpi-num { font-size: 20px; font-weight: 800; color: #252423; }
+    .kpi-sub { font-size: 10px; color: #8A8886; margin-top: 2px; }
+
+    /* Visuals Grid */
+    .visuals-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .pbi-visual {
+      background: #FFFFFF;
+      border: 1px solid var(--pbi-border);
+      border-radius: 6px;
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+    }
+    .visual-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .visual-title { font-size: 13px; font-weight: 700; color: #252423; }
+    .visual-canvas-wrap { flex: 1; height: 240px; position: relative; }
+
+    /* Table Styles */
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { background: #F3F2F1; padding: 8px 10px; text-align: left; font-weight: 700; border-bottom: 1px solid var(--pbi-border); color: #323130; }
+    td { padding: 7px 10px; border-bottom: 1px solid #EDEBE9; color: #252423; }
+    tr:hover td { background: #F8F8F8; }
+
+    .badge-pill { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; text-align: center; }
+    .badge-high { background: #DFF6DD; color: #107C41; }
+    .badge-medium { background: #FFF4CE; color: #797673; }
+    .badge-low { background: #FDE7E9; color: #A80000; }
+
+    /* Bottom Page Bar */
+    .pbi-page-bar {
+      background: #FFFFFF;
+      border-top: 1px solid var(--pbi-border);
+      height: 34px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 4px;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+    }
+    .page-tab {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #605E5C;
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .page-tab:hover { background: #F3F2F1; }
+    .page-tab.active { color: #000000; border-bottom-color: var(--pbi-yellow); background: #FAF9F8; }
+  </style>
+</head>
+<body>
+
+  <!-- Title Bar -->
+  <div class="pbi-title-bar">
+    <div class="pbi-title-left">
+      <span class="pbi-logo">PBI</span>
+      <span>District_Development_Monitoring_Dashboard.pbix - Power BI Desktop</span>
+    </div>
+    <div style="font-size: 11px; opacity: 0.85;">
+      <i class="fa-solid fa-cloud-arrow-up"></i> Connected | 120 Analytical Records
+    </div>
+  </div>
+
+  <!-- Ribbon -->
+  <div class="pbi-ribbon">
+    <div class="ribbon-tabs">
+      <span class="active"><i class="fa-solid fa-table-columns"></i> Home</span>
+      <span>Insert</span>
+      <span>Modeling</span>
+      <span>View</span>
+      <span>Optimize</span>
+    </div>
+    <div class="ribbon-actions">
+      <button class="btn-pbi" onclick="window.print()"><i class="fa-solid fa-file-pdf"></i> Export View (PDF)</button>
+      <button class="btn-pbi-primary" onclick="resetFilters()"><i class="fa-solid fa-rotate"></i> Reset Slicers</button>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <div class="pbi-workspace">
+    <!-- Left Navigation Bar -->
+    <div class="pbi-left-bar">
+      <div class="left-icon active" title="Report View"><i class="fa-solid fa-chart-column"></i></div>
+      <div class="left-icon" title="Data Table View"><i class="fa-solid fa-table"></i></div>
+      <div class="left-icon" title="Model Relationship View"><i class="fa-solid fa-diagram-project"></i></div>
+    </div>
+
+    <!-- Canvas Area -->
+    <div class="pbi-canvas-area">
+      <!-- Slicers Bar -->
+      <div class="filters-bar">
+        <div class="filter-item">
+          <label><i class="fa-solid fa-filter"></i> Slicers:</label>
+        </div>
+        <div class="filter-item">
+          <label>District:</label>
+          <select id="slicer-district" class="filter-select" onchange="applyFilters()">
+            <option value="All">All Districts (3)</option>
+            <option value="Amravati">Amravati</option>
+            <option value="Nagpur">Nagpur</option>
+            <option value="Wardha">Wardha</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>Department:</label>
+          <select id="slicer-dept" class="filter-select" onchange="applyFilters()">
+            <option value="All">All Departments (5)</option>
+            <option value="Agriculture">Agriculture</option>
+            <option value="Education">Education</option>
+            <option value="Health">Health</option>
+            <option value="Rural Development">Rural Development</option>
+            <option value="Women & Child Development">Women & Child Development</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>Financial Year:</label>
+          <select id="slicer-fy" class="filter-select" onchange="applyFilters()">
+            <option value="All">All FYs (3)</option>
+            <option value="2023-24">2023-24</option>
+            <option value="2024-25">2024-25</option>
+            <option value="2025-26">2025-26</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>Status:</label>
+          <select id="slicer-status" class="filter-select" onchange="applyFilters()">
+            <option value="All">All Statuses</option>
+            <option value="Completed">Completed</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div style="margin-left: auto; font-size: 11px; color: #605E5C;">
+          Filtered: <strong id="filter-count">120</strong> records
+        </div>
+      </div>
+
+      <!-- PAGE 1: EXECUTIVE SUMMARY -->
+      <div id="page-1" class="page-content">
+        <div class="kpi-row">
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Target Beneficiaries</div>
+            <div class="kpi-num" id="kpi-target">91,700</div>
+            <div class="kpi-sub">Total planned reach</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Actual Covered</div>
+            <div class="kpi-num" id="kpi-actual">72,644</div>
+            <div class="kpi-sub">Physical reach achieved</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Achievement %</div>
+            <div class="kpi-num" id="kpi-ach" style="color: #107C41;">79.2%</div>
+            <div class="kpi-sub">Coverage efficiency</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Budget Allocated</div>
+            <div class="kpi-num" id="kpi-alloc">₹6,143 L</div>
+            <div class="kpi-sub">Total financial outlay</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Budget Utilized</div>
+            <div class="kpi-num" id="kpi-util" style="color: #118DFF;">₹4,766 L</div>
+            <div class="kpi-sub">Utilization: 77.6%</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Citizen Satisfaction</div>
+            <div class="kpi-num" id="kpi-sat" style="color: #D83B01;">73.1</div>
+            <div class="kpi-sub">Out of 100 Index</div>
+          </div>
+        </div>
+
+        <div class="visuals-row" style="margin-top: 14px;">
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-chart-column"></i> District Performance: Target vs Actual Beneficiaries</span>
+            </div>
+            <div class="visual-canvas-wrap">
+              <canvas id="chartDistTargetActual"></canvas>
+            </div>
+          </div>
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-chart-pie"></i> Performance Categories Distribution</span>
+            </div>
+            <div class="visual-canvas-wrap">
+              <canvas id="chartPerfDonut"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="pbi-visual" style="margin-top: 14px;">
+          <div class="visual-header">
+            <span class="visual-title"><i class="fa-solid fa-table"></i> District Consolidated Scorecard</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>District Name</th>
+                <th>Target Beneficiaries</th>
+                <th>Actual Beneficiaries</th>
+                <th>Achievement %</th>
+                <th>Budget Allocated (₹ Lakh)</th>
+                <th>Budget Utilized (₹ Lakh)</th>
+                <th>Budget Util %</th>
+                <th>Avg Satisfaction Score</th>
+                <th>Overall Rank</th>
+              </tr>
+            </thead>
+            <tbody id="table-district-scorecard"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PAGE 2: DEPARTMENT PERFORMANCE -->
+      <div id="page-2" class="page-content" style="display: none;">
+        <div class="visuals-row">
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-bars-progress"></i> Beneficiary Achievement % by Department</span>
+            </div>
+            <div class="visual-canvas-wrap">
+              <canvas id="chartDeptAchievement"></canvas>
+            </div>
+          </div>
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-money-bill-trend-up"></i> Budget Allocated vs Utilized by Department</span>
+            </div>
+            <div class="visual-canvas-wrap">
+              <canvas id="chartDeptBudget"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="visuals-row" style="margin-top: 14px;">
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-star-half-stroke"></i> Citizen Satisfaction Score by Department</span>
+            </div>
+            <div class="visual-canvas-wrap">
+              <canvas id="chartDeptSat"></canvas>
+            </div>
+          </div>
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-triangle-exclamation"></i> High Spending vs Low Satisfaction Matrix</span>
+            </div>
+            <div style="padding: 10px; font-size: 12px; color: #4B5563; line-height: 1.6;">
+              <p><strong>Senior Consultant Finding:</strong></p>
+              <p style="margin-top: 6px; color: #A80000; font-weight: 700;">
+                <i class="fa-solid fa-circle-exclamation"></i> Women & Child Development (WCD) Alert:
+              </p>
+              <p>WCD absorbs <strong>81.71% of its budget</strong> (₹860.13 L), yet achieves the lowest satisfaction score across the district (<strong>67.37/100</strong>), led by the <em>Nutrition Improvement Programme</em> (60.86/100).</p>
+              <hr style="margin: 12px 0; border: 0; border-top: 1px solid #E5E7EB;">
+              <p style="color: #107C41; font-weight: 700;">
+                <i class="fa-solid fa-circle-check"></i> Education High Performer:
+              </p>
+              <p>Education leads in physical coverage with <strong>81.49% achievement</strong> while consuming only 74.75% of budget allocation.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 3: GEOGRAPHIC ANALYSIS -->
+      <div id="page-3" class="page-content" style="display: none;">
+        <div class="visuals-row">
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title" style="color: #107C41;"><i class="fa-solid fa-arrow-trend-up"></i> Top 5 Performing Blocks (by Achievement %)</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Block</th>
+                  <th>District</th>
+                  <th>Target</th>
+                  <th>Actual</th>
+                  <th>Achievement %</th>
+                  <th>Budget Util %</th>
+                  <th>Satisfaction</th>
+                </tr>
+              </thead>
+              <tbody id="table-top-blocks"></tbody>
+            </table>
+          </div>
+
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title" style="color: #D83B01;"><i class="fa-solid fa-triangle-exclamation"></i> Bottom 5 Blocks (Immediate Intervention)</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Block</th>
+                  <th>District</th>
+                  <th>Target</th>
+                  <th>Actual</th>
+                  <th>Achievement %</th>
+                  <th>Budget Util %</th>
+                  <th>Satisfaction</th>
+                </tr>
+              </thead>
+              <tbody id="table-bot-blocks"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="pbi-visual" style="margin-top: 14px;">
+          <div class="visual-header">
+            <span class="visual-title"><i class="fa-solid fa-chart-simple"></i> All 12 Blocks Ranked by Achievement %</span>
+          </div>
+          <div class="visual-canvas-wrap" style="height: 260px;">
+            <canvas id="chartAllBlocks"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 4: DATA QUALITY REPORT -->
+      <div id="page-4" class="page-content" style="display: none;">
+        <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Raw Records Ingested</div>
+            <div class="kpi-num">126</div>
+            <div class="kpi-sub">Initial data extract</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Duplicate Records Dropped</div>
+            <div class="kpi-num" style="color: #A80000;">6 (4.8%)</div>
+            <div class="kpi-sub">Identical multi-column match</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Total Anomalies Rectified</div>
+            <div class="kpi-num" style="color: #D83B01;">36 (28.6%)</div>
+            <div class="kpi-sub">Missing, typos, signs, outliers</div>
+          </div>
+          <div class="pbi-kpi-card">
+            <div class="kpi-title">Clean Analytical Records</div>
+            <div class="kpi-num" style="color: #107C41;">120</div>
+            <div class="kpi-sub">100% verified integrity</div>
+          </div>
+        </div>
+
+        <div class="visuals-row" style="margin-top: 14px;">
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-pie-chart"></i> Data Quality Issues Breakdown</span>
+            </div>
+            <div class="visual-canvas-wrap">
+              <canvas id="chartDqBreakdown"></canvas>
+            </div>
+          </div>
+          <div class="pbi-visual">
+            <div class="visual-header">
+              <span class="visual-title"><i class="fa-solid fa-list-check"></i> Quality Control Actions Summary</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Issue Category</th>
+                  <th>Count</th>
+                  <th>Action Taken</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Duplicates</td><td>6</td><td>Removed redundant records (ADM-0012, 0027, 0046, etc.)</td></tr>
+                <tr><td>Missing Department / Block</td><td>2</td><td>Inferred via Scheme / Village taxonomy</td></tr>
+                <tr><td>Missing Targets / Budget</td><td>4</td><td>Imputed using Scheme Median & Completion benchmarks</td></tr>
+                <tr><td>Invalid Categorical Labels</td><td>9</td><td>Standardized 'Helth', 'Done', 'Junn', '13thMonth', '2025/27'</td></tr>
+                <tr><td>Sign Errors / Scale Limit</td><td>5</td><td>Corrected -12.5L, -350 Target, -30 Sat, string 'Excellent', 200 Sat</td></tr>
+                <tr><td>Extreme Statistical Outliers</td><td>4</td><td>Treated 25,000 Actual, 50,000 Target, ₹9,999L, ₹950L via IQR bounds</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Page Bar -->
+  <div class="pbi-page-bar">
+    <div class="page-tab active" onclick="switchPage(1)"><i class="fa-solid fa-file"></i> Page 1: Executive Summary</div>
+    <div class="page-tab" onclick="switchPage(2)"><i class="fa-solid fa-file"></i> Page 2: Department Performance</div>
+    <div class="page-tab" onclick="switchPage(3)"><i class="fa-solid fa-file"></i> Page 3: Geographic Analysis</div>
+    <div class="page-tab" onclick="switchPage(4)"><i class="fa-solid fa-file"></i> Page 4: Data Quality Report</div>
+  </div>
+
+  <script>
+    const masterData = [{"Record_ID":"ADM-0001","District":"Amravati","Block":"Achalpur","Village":"Ganeshpur","Financial_Year":"2025-26","Month":"November","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":390.0,"Actual_Beneficiaries":385.0,"Budget_Allocated_Lakh":70.61,"Budget_Utilized_Lakh":66.54,"Officer_Name":"S. Wankhede","Status":"Completed","Citizen_Satisfaction_Score":66.0,"Achievement_%":98.72,"Budget_Utilization_%":94.24,"Performance_Category":"High"},{"Record_ID":"ADM-0002","District":"Wardha","Block":"Wardha","Village":"Ashti","Financial_Year":"2025-26","Month":"March","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":494.0,"Actual_Beneficiaries":320.0,"Budget_Allocated_Lakh":64.49,"Budget_Utilized_Lakh":41.6,"Officer_Name":"V. Meshram","Status":"Pending","Citizen_Satisfaction_Score":79.0,"Achievement_%":64.78,"Budget_Utilization_%":64.51,"Performance_Category":"Low"},{"Record_ID":"ADM-0003","District":"Wardha","Block":"Arvi","Village":"Ashti","Financial_Year":"2023-24","Month":"August","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":597.0,"Actual_Beneficiaries":422.0,"Budget_Allocated_Lakh":30.04,"Budget_Utilized_Lakh":19.67,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":67.0,"Achievement_%":70.69,"Budget_Utilization_%":65.48,"Performance_Category":"Medium"},{"Record_ID":"ADM-0004","District":"Wardha","Block":"Deoli","Village":"Shivapur","Financial_Year":"2025-26","Month":"January","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":484.0,"Actual_Beneficiaries":487.0,"Budget_Allocated_Lakh":37.01,"Budget_Utilized_Lakh":32.66,"Officer_Name":"R. Shende","Status":"Completed","Citizen_Satisfaction_Score":87.0,"Achievement_%":100.62,"Budget_Utilization_%":88.25,"Performance_Category":"High"},{"Record_ID":"ADM-0005","District":"Wardha","Block":"Seloo","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"February","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":577.0,"Actual_Beneficiaries":405.0,"Budget_Allocated_Lakh":40.09,"Budget_Utilized_Lakh":28.53,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":49.0,"Achievement_%":70.19,"Budget_Utilization_%":71.16,"Performance_Category":"Medium"},{"Record_ID":"ADM-0006","District":"Amravati","Block":"Achalpur","Village":"Rampur","Financial_Year":"2023-24","Month":"November","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":386.0,"Actual_Beneficiaries":251.0,"Budget_Allocated_Lakh":93.65,"Budget_Utilized_Lakh":89.83,"Officer_Name":"R. Shende","Status":"Pending","Citizen_Satisfaction_Score":71.0,"Achievement_%":65.03,"Budget_Utilization_%":95.92,"Performance_Category":"Low"},{"Record_ID":"ADM-0007","District":"Amravati","Block":"Morshi","Village":"Ganeshpur","Financial_Year":"2024-25","Month":"May","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":1068.0,"Actual_Beneficiaries":843.0,"Budget_Allocated_Lakh":94.07,"Budget_Utilized_Lakh":95.02,"Officer_Name":"Unassigned","Status":"In Progress","Citizen_Satisfaction_Score":86.0,"Achievement_%":78.93,"Budget_Utilization_%":101.01,"Performance_Category":"Medium"},{"Record_ID":"ADM-0008","District":"Wardha","Block":"Seloo","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"December","Department":"Education","Scheme_Name":"Digital Classroom Support","Target_Beneficiaries":1069.0,"Actual_Beneficiaries":934.0,"Budget_Allocated_Lakh":16.74,"Budget_Utilized_Lakh":10.37,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":75.0,"Achievement_%":87.37,"Budget_Utilization_%":61.95,"Performance_Category":"Medium"},{"Record_ID":"ADM-0009","District":"Nagpur","Block":"Hingna","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"October","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":1333.0,"Actual_Beneficiaries":1103.0,"Budget_Allocated_Lakh":11.16,"Budget_Utilized_Lakh":9.22,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":88.0,"Achievement_%":82.75,"Budget_Utilization_%":82.62,"Performance_Category":"Medium"},{"Record_ID":"ADM-0010","District":"Amravati","Block":"Chandur Railway","Village":"Kharangana","Financial_Year":"2023-24","Month":"June","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":828.0,"Actual_Beneficiaries":610.0,"Budget_Allocated_Lakh":64.93,"Budget_Utilized_Lakh":45.04,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":78.0,"Achievement_%":73.67,"Budget_Utilization_%":69.37,"Performance_Category":"Medium"},{"Record_ID":"ADM-0011","District":"Wardha","Block":"Arvi","Village":"Ganeshpur","Financial_Year":"2024-25","Month":"July","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":1151.0,"Actual_Beneficiaries":690.0,"Budget_Allocated_Lakh":54.0,"Budget_Utilized_Lakh":45.52,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":49.0,"Achievement_%":59.95,"Budget_Utilization_%":84.3,"Performance_Category":"Low"},{"Record_ID":"ADM-0012","District":"Wardha","Block":"Arvi","Village":"Sawangi","Financial_Year":"2023-24","Month":"December","Department":"Education","Scheme_Name":"School Attendance Improvement","Target_Beneficiaries":1119.0,"Actual_Beneficiaries":852.0,"Budget_Allocated_Lakh":25.21,"Budget_Utilized_Lakh":22.46,"Officer_Name":"R. Shende","Status":"In Progress","Citizen_Satisfaction_Score":56.0,"Achievement_%":76.14,"Budget_Utilization_%":89.09,"Performance_Category":"Medium"},{"Record_ID":"ADM-0013","District":"Amravati","Block":"Daryapur","Village":"Sawangi","Financial_Year":"2024-25","Month":"January","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":674.0,"Actual_Beneficiaries":551.0,"Budget_Allocated_Lakh":47.18,"Budget_Utilized_Lakh":47.83,"Officer_Name":"R. Shende","Status":"In Progress","Citizen_Satisfaction_Score":74.0,"Achievement_%":81.75,"Budget_Utilization_%":101.38,"Performance_Category":"Medium"},{"Record_ID":"ADM-0014","District":"Wardha","Block":"Arvi","Village":"Sawangi","Financial_Year":"2024-25","Month":"March","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":1100.0,"Actual_Beneficiaries":811.0,"Budget_Allocated_Lakh":81.39,"Budget_Utilized_Lakh":81.51,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":53.0,"Achievement_%":73.73,"Budget_Utilization_%":100.15,"Performance_Category":"Medium"},{"Record_ID":"ADM-0015","District":"Amravati","Block":"Daryapur","Village":"Ashti","Financial_Year":"2023-24","Month":"April","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":650.0,"Actual_Beneficiaries":585.0,"Budget_Allocated_Lakh":24.59,"Budget_Utilized_Lakh":14.85,"Officer_Name":"N. Kale","Status":"Completed","Citizen_Satisfaction_Score":94.0,"Achievement_%":90.0,"Budget_Utilization_%":60.39,"Performance_Category":"High"},{"Record_ID":"ADM-0016","District":"Wardha","Block":"Wardha","Village":"Nandgaon","Financial_Year":"2023-24","Month":"April","Department":"Agriculture","Scheme_Name":"Farmer Training Programme","Target_Beneficiaries":965.0,"Actual_Beneficiaries":947.0,"Budget_Allocated_Lakh":55.17,"Budget_Utilized_Lakh":48.2,"Officer_Name":"S. Wankhede","Status":"Completed","Citizen_Satisfaction_Score":94.0,"Achievement_%":98.13,"Budget_Utilization_%":87.37,"Performance_Category":"High"},{"Record_ID":"ADM-0017","District":"Wardha","Block":"Arvi","Village":"Shivapur","Financial_Year":"2023-24","Month":"January","Department":"Agriculture","Scheme_Name":"Farmer Training Programme","Target_Beneficiaries":581.0,"Actual_Beneficiaries":352.0,"Budget_Allocated_Lakh":65.89,"Budget_Utilized_Lakh":58.28,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":81.0,"Achievement_%":60.59,"Budget_Utilization_%":88.45,"Performance_Category":"Low"},{"Record_ID":"ADM-0018","District":"Wardha","Block":"Deoli","Village":"Dhamangaon","Financial_Year":"2023-24","Month":"August","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":1359.0,"Actual_Beneficiaries":936.0,"Budget_Allocated_Lakh":83.9,"Budget_Utilized_Lakh":77.3,"Officer_Name":"N. Kale","Status":"Pending","Citizen_Satisfaction_Score":94.0,"Achievement_%":68.87,"Budget_Utilization_%":92.13,"Performance_Category":"Low"},{"Record_ID":"ADM-0019","District":"Amravati","Block":"Achalpur","Village":"Nandgaon","Financial_Year":"2024-25","Month":"July","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":293.0,"Actual_Beneficiaries":234.0,"Budget_Allocated_Lakh":48.0,"Budget_Utilized_Lakh":42.16,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":58.0,"Achievement_%":79.86,"Budget_Utilization_%":87.83,"Performance_Category":"Medium"},{"Record_ID":"ADM-0020","District":"Nagpur","Block":"Umred","Village":"Ashti","Financial_Year":"2023-24","Month":"January","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":1123.0,"Actual_Beneficiaries":1009.0,"Budget_Allocated_Lakh":78.86,"Budget_Utilized_Lakh":57.12,"Officer_Name":"A. Deshmukh","Status":"In Progress","Citizen_Satisfaction_Score":62.0,"Achievement_%":89.85,"Budget_Utilization_%":72.43,"Performance_Category":"Medium"},{"Record_ID":"ADM-0021","District":"Nagpur","Block":"Parseoni","Village":"Ashti","Financial_Year":"2024-25","Month":"January","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":296.0,"Actual_Beneficiaries":201.0,"Budget_Allocated_Lakh":82.42,"Budget_Utilized_Lakh":58.28,"Officer_Name":"S. Wankhede","Status":"Pending","Citizen_Satisfaction_Score":59.0,"Achievement_%":67.91,"Budget_Utilization_%":70.71,"Performance_Category":"Low"},{"Record_ID":"ADM-0022","District":"Amravati","Block":"Chandur Railway","Village":"Sawangi","Financial_Year":"2024-25","Month":"March","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":436.0,"Actual_Beneficiaries":369.0,"Budget_Allocated_Lakh":54.2,"Budget_Utilized_Lakh":39.1,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":92.0,"Achievement_%":84.63,"Budget_Utilization_%":72.14,"Performance_Category":"Medium"},{"Record_ID":"ADM-0023","District":"Wardha","Block":"Wardha","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"November","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":1004.0,"Actual_Beneficiaries":991.0,"Budget_Allocated_Lakh":45.06,"Budget_Utilized_Lakh":37.46,"Officer_Name":"R. Shende","Status":"Completed","Citizen_Satisfaction_Score":96.0,"Achievement_%":98.71,"Budget_Utilization_%":83.13,"Performance_Category":"High"},{"Record_ID":"ADM-0024","District":"Wardha","Block":"Seloo","Village":"Kharangana","Financial_Year":"2024-25","Month":"March","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":1325.0,"Actual_Beneficiaries":1069.0,"Budget_Allocated_Lakh":68.05,"Budget_Utilized_Lakh":48.81,"Officer_Name":"V. Meshram","Status":"In Progress","Citizen_Satisfaction_Score":52.0,"Achievement_%":80.68,"Budget_Utilization_%":71.73,"Performance_Category":"Medium"},{"Record_ID":"ADM-0025","District":"Amravati","Block":"Morshi","Village":"Rampur","Financial_Year":"2025-26","Month":"July","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":566.0,"Actual_Beneficiaries":525.0,"Budget_Allocated_Lakh":66.11,"Budget_Utilized_Lakh":42.64,"Officer_Name":"V. Meshram","Status":"Completed","Citizen_Satisfaction_Score":67.0,"Achievement_%":92.76,"Budget_Utilization_%":64.5,"Performance_Category":"High"},{"Record_ID":"ADM-0026","District":"Amravati","Block":"Morshi","Village":"Nandgaon","Financial_Year":"2023-24","Month":"May","Department":"Women & Child Development","Scheme_Name":"Women Livelihood Support","Target_Beneficiaries":1005.0,"Actual_Beneficiaries":824.0,"Budget_Allocated_Lakh":80.19,"Budget_Utilized_Lakh":57.19,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":93.0,"Achievement_%":81.99,"Budget_Utilization_%":71.32,"Performance_Category":"Medium"},{"Record_ID":"ADM-0027","District":"Wardha","Block":"Wardha","Village":"Rampur","Financial_Year":"2025-26","Month":"October","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":337.0,"Actual_Beneficiaries":338.0,"Budget_Allocated_Lakh":69.95,"Budget_Utilized_Lakh":37.69,"Officer_Name":"V. Meshram","Status":"Completed","Citizen_Satisfaction_Score":81.0,"Achievement_%":100.3,"Budget_Utilization_%":53.88,"Performance_Category":"High"},{"Record_ID":"ADM-0028","District":"Nagpur","Block":"Umred","Village":"Kharangana","Financial_Year":"2023-24","Month":"April","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":243.0,"Actual_Beneficiaries":231.0,"Budget_Allocated_Lakh":35.18,"Budget_Utilized_Lakh":18.44,"Officer_Name":"N. Kale","Status":"Completed","Citizen_Satisfaction_Score":52.0,"Achievement_%":95.06,"Budget_Utilization_%":52.42,"Performance_Category":"High"},{"Record_ID":"ADM-0029","District":"Amravati","Block":"Chandur Railway","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"April","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":688.0,"Actual_Beneficiaries":603.0,"Budget_Allocated_Lakh":68.26,"Budget_Utilized_Lakh":35.91,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":48.0,"Achievement_%":87.65,"Budget_Utilization_%":52.61,"Performance_Category":"Medium"},{"Record_ID":"ADM-0030","District":"Amravati","Block":"Daryapur","Village":"Kharangana","Financial_Year":"2024-25","Month":"July","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":1097.0,"Actual_Beneficiaries":1010.0,"Budget_Allocated_Lakh":41.56,"Budget_Utilized_Lakh":35.84,"Officer_Name":"V. Meshram","Status":"Completed","Citizen_Satisfaction_Score":88.0,"Achievement_%":92.07,"Budget_Utilization_%":86.24,"Performance_Category":"High"},{"Record_ID":"ADM-0031","District":"Nagpur","Block":"Umred","Village":"Sawangi","Financial_Year":"2025-26","Month":"September","Department":"Education","Scheme_Name":"School Attendance Improvement","Target_Beneficiaries":1362.0,"Actual_Beneficiaries":1001.0,"Budget_Allocated_Lakh":93.93,"Budget_Utilized_Lakh":52.99,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":85.0,"Achievement_%":73.49,"Budget_Utilization_%":56.41,"Performance_Category":"Medium"},{"Record_ID":"ADM-0032","District":"Wardha","Block":"Wardha","Village":"Borgaon","Financial_Year":"2024-25","Month":"April","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":780.0,"Actual_Beneficiaries":500.0,"Budget_Allocated_Lakh":20.21,"Budget_Utilized_Lakh":17.55,"Officer_Name":"R. Shende","Status":"Pending","Citizen_Satisfaction_Score":88.0,"Achievement_%":64.1,"Budget_Utilization_%":86.84,"Performance_Category":"Low"},{"Record_ID":"ADM-0033","District":"Amravati","Block":"Chandur Railway","Village":"Dhamangaon","Financial_Year":"2025-26","Month":"March","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":914.0,"Actual_Beneficiaries":918.0,"Budget_Allocated_Lakh":74.59,"Budget_Utilized_Lakh":43.25,"Officer_Name":"R. Shende","Status":"Completed","Citizen_Satisfaction_Score":60.0,"Achievement_%":100.44,"Budget_Utilization_%":57.98,"Performance_Category":"High"},{"Record_ID":"ADM-0034","District":"Nagpur","Block":"Kalmeshwar","Village":"Kharangana","Financial_Year":"2025-26","Month":"August","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":500.0,"Actual_Beneficiaries":397.0,"Budget_Allocated_Lakh":79.1,"Budget_Utilized_Lakh":70.17,"Officer_Name":"A. Deshmukh","Status":"In Progress","Citizen_Satisfaction_Score":60.0,"Achievement_%":79.4,"Budget_Utilization_%":88.71,"Performance_Category":"Medium"},{"Record_ID":"ADM-0035","District":"Nagpur","Block":"Parseoni","Village":"Kharangana","Financial_Year":"2025-26","Month":"December","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":1348.0,"Actual_Beneficiaries":1354.0,"Budget_Allocated_Lakh":43.78,"Budget_Utilized_Lakh":28.94,"Officer_Name":"A. Deshmukh","Status":"Completed","Citizen_Satisfaction_Score":56.0,"Achievement_%":100.45,"Budget_Utilization_%":66.1,"Performance_Category":"High"},{"Record_ID":"ADM-0036","District":"Nagpur","Block":"Kalmeshwar","Village":"Dhamangaon","Financial_Year":"2024-25","Month":"July","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":596.0,"Actual_Beneficiaries":434.0,"Budget_Allocated_Lakh":49.17,"Budget_Utilized_Lakh":29.69,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":77.0,"Achievement_%":72.82,"Budget_Utilization_%":60.38,"Performance_Category":"Medium"},{"Record_ID":"ADM-0037","District":"Amravati","Block":"Morshi","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"August","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":465.0,"Actual_Beneficiaries":349.0,"Budget_Allocated_Lakh":52.68,"Budget_Utilized_Lakh":52.51,"Officer_Name":"R. Shende","Status":"In Progress","Citizen_Satisfaction_Score":84.0,"Achievement_%":75.05,"Budget_Utilization_%":99.68,"Performance_Category":"Medium"},{"Record_ID":"ADM-0038","District":"Amravati","Block":"Chandur Railway","Village":"Rampur","Financial_Year":"2024-25","Month":"February","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":913.0,"Actual_Beneficiaries":503.0,"Budget_Allocated_Lakh":13.71,"Budget_Utilized_Lakh":10.39,"Officer_Name":"P. Patil","Status":"Pending","Citizen_Satisfaction_Score":80.0,"Achievement_%":55.09,"Budget_Utilization_%":75.78,"Performance_Category":"Low"},{"Record_ID":"ADM-0039","District":"Amravati","Block":"Chandur Railway","Village":"Nandgaon","Financial_Year":"2023-24","Month":"October","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":479.0,"Actual_Beneficiaries":299.0,"Budget_Allocated_Lakh":82.28,"Budget_Utilized_Lakh":48.63,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":85.0,"Achievement_%":62.42,"Budget_Utilization_%":59.1,"Performance_Category":"Low"},{"Record_ID":"ADM-0040","District":"Amravati","Block":"Daryapur","Village":"Rampur","Financial_Year":"2025-26","Month":"December","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":1030.0,"Actual_Beneficiaries":570.0,"Budget_Allocated_Lakh":27.5,"Budget_Utilized_Lakh":19.31,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":58.0,"Achievement_%":55.34,"Budget_Utilization_%":70.22,"Performance_Category":"Low"},{"Record_ID":"ADM-0041","District":"Wardha","Block":"Deoli","Village":"Borgaon","Financial_Year":"2023-24","Month":"February","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":357.0,"Actual_Beneficiaries":266.0,"Budget_Allocated_Lakh":71.29,"Budget_Utilized_Lakh":50.0,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":53.0,"Achievement_%":74.51,"Budget_Utilization_%":70.14,"Performance_Category":"Medium"},{"Record_ID":"ADM-0042","District":"Wardha","Block":"Deoli","Village":"Ganeshpur","Financial_Year":"2025-26","Month":"February","Department":"Education","Scheme_Name":"Digital Classroom Support","Target_Beneficiaries":819.0,"Actual_Beneficiaries":833.0,"Budget_Allocated_Lakh":9.96,"Budget_Utilized_Lakh":9.7,"Officer_Name":"N. Kale","Status":"Completed","Citizen_Satisfaction_Score":84.0,"Achievement_%":101.71,"Budget_Utilization_%":97.39,"Performance_Category":"High"},{"Record_ID":"ADM-0043","District":"Amravati","Block":"Morshi","Village":"Pimpalgaon","Financial_Year":"2025-26","Month":"April","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":891.0,"Actual_Beneficiaries":697.0,"Budget_Allocated_Lakh":48.17,"Budget_Utilized_Lakh":42.93,"Officer_Name":"A. Deshmukh","Status":"In Progress","Citizen_Satisfaction_Score":72.0,"Achievement_%":78.23,"Budget_Utilization_%":89.12,"Performance_Category":"Medium"},{"Record_ID":"ADM-0044","District":"Nagpur","Block":"Kalmeshwar","Village":"Nandgaon","Financial_Year":"2023-24","Month":"February","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":1157.0,"Actual_Beneficiaries":791.0,"Budget_Allocated_Lakh":69.94,"Budget_Utilized_Lakh":49.55,"Officer_Name":"M. Thakare","Status":"Pending","Citizen_Satisfaction_Score":90.0,"Achievement_%":68.37,"Budget_Utilization_%":70.85,"Performance_Category":"Low"},{"Record_ID":"ADM-0045","District":"Wardha","Block":"Wardha","Village":"Nandgaon","Financial_Year":"2023-24","Month":"February","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":276.0,"Actual_Beneficiaries":277.0,"Budget_Allocated_Lakh":19.85,"Budget_Utilized_Lakh":18.0,"Officer_Name":"P. Patil","Status":"Completed","Citizen_Satisfaction_Score":84.0,"Achievement_%":100.36,"Budget_Utilization_%":90.68,"Performance_Category":"High"},{"Record_ID":"ADM-0046","District":"Wardha","Block":"Deoli","Village":"Ashti","Financial_Year":"2023-24","Month":"August","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":818.0,"Actual_Beneficiaries":667.0,"Budget_Allocated_Lakh":14.29,"Budget_Utilized_Lakh":14.29,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":48.0,"Achievement_%":81.54,"Budget_Utilization_%":100.0,"Performance_Category":"Medium"},{"Record_ID":"ADM-0047","District":"Amravati","Block":"Chandur Railway","Village":"Ganeshpur","Financial_Year":"2025-26","Month":"February","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":1025.0,"Actual_Beneficiaries":968.0,"Budget_Allocated_Lakh":74.78,"Budget_Utilized_Lakh":46.67,"Officer_Name":"R. Shende","Status":"Completed","Citizen_Satisfaction_Score":84.0,"Achievement_%":94.44,"Budget_Utilization_%":62.41,"Performance_Category":"High"},{"Record_ID":"ADM-0048","District":"Nagpur","Block":"Parseoni","Village":"Ganeshpur","Financial_Year":"2024-25","Month":"March","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":936.0,"Actual_Beneficiaries":901.0,"Budget_Allocated_Lakh":63.94,"Budget_Utilized_Lakh":54.53,"Officer_Name":"A. Deshmukh","Status":"Completed","Citizen_Satisfaction_Score":67.4,"Achievement_%":96.26,"Budget_Utilization_%":85.28,"Performance_Category":"High"},{"Record_ID":"ADM-0049","District":"Wardha","Block":"Deoli","Village":"Kharangana","Financial_Year":"2023-24","Month":"October","Department":"Rural Development","Scheme_Name":"Drinking Water Coverage","Target_Beneficiaries":733.0,"Actual_Beneficiaries":484.0,"Budget_Allocated_Lakh":74.93,"Budget_Utilized_Lakh":68.82,"Officer_Name":"S. Wankhede","Status":"Pending","Citizen_Satisfaction_Score":96.0,"Achievement_%":66.03,"Budget_Utilization_%":91.85,"Performance_Category":"Low"},{"Record_ID":"ADM-0050","District":"Wardha","Block":"Seloo","Village":"Rampur","Financial_Year":"2023-24","Month":"September","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":590.0,"Actual_Beneficiaries":445.0,"Budget_Allocated_Lakh":71.32,"Budget_Utilized_Lakh":47.39,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":61.0,"Achievement_%":75.42,"Budget_Utilization_%":66.45,"Performance_Category":"Medium"},{"Record_ID":"ADM-0051","District":"Nagpur","Block":"Umred","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"September","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":345.0,"Actual_Beneficiaries":360.0,"Budget_Allocated_Lakh":9.76,"Budget_Utilized_Lakh":6.58,"Officer_Name":"M. Thakare","Status":"Completed","Citizen_Satisfaction_Score":86.0,"Achievement_%":104.35,"Budget_Utilization_%":67.42,"Performance_Category":"High"},{"Record_ID":"ADM-0052","District":"Nagpur","Block":"Kalmeshwar","Village":"Nandgaon","Financial_Year":"2025-26","Month":"June","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":908.0,"Actual_Beneficiaries":892.0,"Budget_Allocated_Lakh":23.97,"Budget_Utilized_Lakh":12.6,"Officer_Name":"P. Patil","Status":"Completed","Citizen_Satisfaction_Score":81.0,"Achievement_%":98.24,"Budget_Utilization_%":52.57,"Performance_Category":"High"},{"Record_ID":"ADM-0053","District":"Amravati","Block":"Morshi","Village":"Nandgaon","Financial_Year":"2024-25","Month":"September","Department":"Rural Development","Scheme_Name":"Drinking Water Coverage","Target_Beneficiaries":700.0,"Actual_Beneficiaries":614.0,"Budget_Allocated_Lakh":64.77,"Budget_Utilized_Lakh":60.82,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":86.0,"Achievement_%":87.71,"Budget_Utilization_%":93.9,"Performance_Category":"Medium"},{"Record_ID":"ADM-0054","District":"Amravati","Block":"Chandur Railway","Village":"Ganeshpur","Financial_Year":"2024-25","Month":"May","Department":"Education","Scheme_Name":"School Attendance Improvement","Target_Beneficiaries":1161.0,"Actual_Beneficiaries":884.0,"Budget_Allocated_Lakh":18.7,"Budget_Utilized_Lakh":15.36,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":63.0,"Achievement_%":76.14,"Budget_Utilization_%":82.14,"Performance_Category":"Medium"},{"Record_ID":"ADM-0055","District":"Nagpur","Block":"Parseoni","Village":"Sawangi","Financial_Year":"2025-26","Month":"April","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":924.0,"Actual_Beneficiaries":579.0,"Budget_Allocated_Lakh":35.31,"Budget_Utilized_Lakh":32.42,"Officer_Name":"N. Kale","Status":"Pending","Citizen_Satisfaction_Score":90.0,"Achievement_%":62.66,"Budget_Utilization_%":91.82,"Performance_Category":"Low"},{"Record_ID":"ADM-0056","District":"Nagpur","Block":"Umred","Village":"Borgaon","Financial_Year":"2024-25","Month":"November","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":1215.0,"Actual_Beneficiaries":702.0,"Budget_Allocated_Lakh":62.12,"Budget_Utilized_Lakh":55.09,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":74.0,"Achievement_%":57.78,"Budget_Utilization_%":88.68,"Performance_Category":"Low"},{"Record_ID":"ADM-0057","District":"Nagpur","Block":"Hingna","Village":"Rampur","Financial_Year":"2024-25","Month":"January","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":356.0,"Actual_Beneficiaries":262.0,"Budget_Allocated_Lakh":38.06,"Budget_Utilized_Lakh":36.29,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":87.0,"Achievement_%":73.6,"Budget_Utilization_%":95.35,"Performance_Category":"Medium"},{"Record_ID":"ADM-0058","District":"Amravati","Block":"Daryapur","Village":"Rampur","Financial_Year":"2025-26","Month":"February","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":1254.0,"Actual_Beneficiaries":1112.0,"Budget_Allocated_Lakh":29.08,"Budget_Utilized_Lakh":22.71,"Officer_Name":"V. Meshram","Status":"In Progress","Citizen_Satisfaction_Score":68.0,"Achievement_%":88.68,"Budget_Utilization_%":78.09,"Performance_Category":"Medium"},{"Record_ID":"ADM-0059","District":"Nagpur","Block":"Hingna","Village":"Nandgaon","Financial_Year":"2023-24","Month":"August","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":1123.0,"Actual_Beneficiaries":740.0,"Budget_Allocated_Lakh":19.58,"Budget_Utilized_Lakh":18.87,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":88.0,"Achievement_%":65.89,"Budget_Utilization_%":96.37,"Performance_Category":"Low"},{"Record_ID":"ADM-0060","District":"Wardha","Block":"Wardha","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"November","Department":"Agriculture","Scheme_Name":"Farmer Training Programme","Target_Beneficiaries":843.0,"Actual_Beneficiaries":556.0,"Budget_Allocated_Lakh":66.66,"Budget_Utilized_Lakh":66.85,"Officer_Name":"P. Patil","Status":"Pending","Citizen_Satisfaction_Score":50.0,"Achievement_%":65.95,"Budget_Utilization_%":100.29,"Performance_Category":"Low"},{"Record_ID":"ADM-0061","District":"Amravati","Block":"Achalpur","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"March","Department":"Education","Scheme_Name":"Digital Classroom Support","Target_Beneficiaries":1131.0,"Actual_Beneficiaries":883.0,"Budget_Allocated_Lakh":68.64,"Budget_Utilized_Lakh":40.3,"Officer_Name":"K. Borkar","Status":"In Progress","Citizen_Satisfaction_Score":54.0,"Achievement_%":78.07,"Budget_Utilization_%":58.71,"Performance_Category":"Medium"},{"Record_ID":"ADM-0062","District":"Wardha","Block":"Arvi","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"June","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":277.0,"Actual_Beneficiaries":185.0,"Budget_Allocated_Lakh":17.76,"Budget_Utilized_Lakh":17.57,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":53.0,"Achievement_%":66.79,"Budget_Utilization_%":98.93,"Performance_Category":"Low"},{"Record_ID":"ADM-0063","District":"Nagpur","Block":"Umred","Village":"Dhamangaon","Financial_Year":"2023-24","Month":"September","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":574.0,"Actual_Beneficiaries":345.0,"Budget_Allocated_Lakh":67.24,"Budget_Utilized_Lakh":35.73,"Officer_Name":"S. Wankhede","Status":"Pending","Citizen_Satisfaction_Score":63.0,"Achievement_%":60.1,"Budget_Utilization_%":53.14,"Performance_Category":"Low"},{"Record_ID":"ADM-0064","District":"Amravati","Block":"Achalpur","Village":"Dhamangaon","Financial_Year":"2023-24","Month":"September","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":535.0,"Actual_Beneficiaries":545.0,"Budget_Allocated_Lakh":31.87,"Budget_Utilized_Lakh":17.38,"Officer_Name":"S. Wankhede","Status":"Completed","Citizen_Satisfaction_Score":58.0,"Achievement_%":101.87,"Budget_Utilization_%":54.53,"Performance_Category":"High"},{"Record_ID":"ADM-0065","District":"Nagpur","Block":"Parseoni","Village":"Rampur","Financial_Year":"2024-25","Month":"April","Department":"Education","Scheme_Name":"School Attendance Improvement","Target_Beneficiaries":316.0,"Actual_Beneficiaries":270.0,"Budget_Allocated_Lakh":16.23,"Budget_Utilized_Lakh":9.53,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":84.0,"Achievement_%":85.44,"Budget_Utilization_%":58.72,"Performance_Category":"Medium"},{"Record_ID":"ADM-0066","District":"Nagpur","Block":"Parseoni","Village":"Nandgaon","Financial_Year":"2025-26","Month":"April","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":308.0,"Actual_Beneficiaries":196.0,"Budget_Allocated_Lakh":62.69,"Budget_Utilized_Lakh":33.1,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":81.0,"Achievement_%":63.64,"Budget_Utilization_%":52.8,"Performance_Category":"Low"},{"Record_ID":"ADM-0067","District":"Nagpur","Block":"Parseoni","Village":"Ashti","Financial_Year":"2024-25","Month":"January","Department":"Education","Scheme_Name":"Digital Classroom Support","Target_Beneficiaries":268.0,"Actual_Beneficiaries":214.0,"Budget_Allocated_Lakh":15.22,"Budget_Utilized_Lakh":15.42,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":92.0,"Achievement_%":79.85,"Budget_Utilization_%":101.31,"Performance_Category":"Medium"},{"Record_ID":"ADM-0068","District":"Nagpur","Block":"Umred","Village":"Nandgaon","Financial_Year":"2025-26","Month":"May","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":831.0,"Actual_Beneficiaries":695.0,"Budget_Allocated_Lakh":51.05,"Budget_Utilized_Lakh":48.77,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":94.0,"Achievement_%":83.63,"Budget_Utilization_%":95.53,"Performance_Category":"Medium"},{"Record_ID":"ADM-0069","District":"Amravati","Block":"Daryapur","Village":"Ashti","Financial_Year":"2023-24","Month":"October","Department":"Women & Child Development","Scheme_Name":"Women Livelihood Support","Target_Beneficiaries":974.0,"Actual_Beneficiaries":660.0,"Budget_Allocated_Lakh":71.13,"Budget_Utilized_Lakh":69.73,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":100.0,"Achievement_%":67.76,"Budget_Utilization_%":98.03,"Performance_Category":"Low"},{"Record_ID":"ADM-0070","District":"Nagpur","Block":"Hingna","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"August","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":569.0,"Actual_Beneficiaries":423.0,"Budget_Allocated_Lakh":13.07,"Budget_Utilized_Lakh":7.48,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":50.0,"Achievement_%":74.34,"Budget_Utilization_%":57.23,"Performance_Category":"Medium"},{"Record_ID":"ADM-0071","District":"Nagpur","Block":"Kalmeshwar","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"March","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":1208.0,"Actual_Beneficiaries":727.0,"Budget_Allocated_Lakh":73.7,"Budget_Utilized_Lakh":60.78,"Officer_Name":"N. Kale","Status":"Pending","Citizen_Satisfaction_Score":71.0,"Achievement_%":60.18,"Budget_Utilization_%":82.47,"Performance_Category":"Low"},{"Record_ID":"ADM-0072","District":"Amravati","Block":"Daryapur","Village":"Rampur","Financial_Year":"2024-25","Month":"August","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":1384.0,"Actual_Beneficiaries":1055.0,"Budget_Allocated_Lakh":57.2,"Budget_Utilized_Lakh":47.31,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":63.0,"Achievement_%":76.23,"Budget_Utilization_%":82.71,"Performance_Category":"Medium"},{"Record_ID":"ADM-0073","District":"Wardha","Block":"Wardha","Village":"Rampur","Financial_Year":"2025-26","Month":"July","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":656.0,"Actual_Beneficiaries":503.0,"Budget_Allocated_Lakh":78.87,"Budget_Utilized_Lakh":76.04,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":91.0,"Achievement_%":76.68,"Budget_Utilization_%":96.41,"Performance_Category":"Medium"},{"Record_ID":"ADM-0074","District":"Amravati","Block":"Daryapur","Village":"Sawangi","Financial_Year":"2023-24","Month":"February","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":297.0,"Actual_Beneficiaries":240.0,"Budget_Allocated_Lakh":88.92,"Budget_Utilized_Lakh":80.88,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":72.0,"Achievement_%":80.81,"Budget_Utilization_%":90.96,"Performance_Category":"Medium"},{"Record_ID":"ADM-0075","District":"Wardha","Block":"Wardha","Village":"Shivapur","Financial_Year":"2025-26","Month":"July","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":472.0,"Actual_Beneficiaries":456.0,"Budget_Allocated_Lakh":47.6,"Budget_Utilized_Lakh":40.5,"Officer_Name":"V. Meshram","Status":"Completed","Citizen_Satisfaction_Score":61.0,"Achievement_%":96.61,"Budget_Utilization_%":85.08,"Performance_Category":"High"},{"Record_ID":"ADM-0076","District":"Wardha","Block":"Deoli","Village":"Ganeshpur","Financial_Year":"2025-26","Month":"February","Department":"Health","Scheme_Name":"Maternal Health Outreach","Target_Beneficiaries":610.0,"Actual_Beneficiaries":537.0,"Budget_Allocated_Lakh":40.91,"Budget_Utilized_Lakh":35.72,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":90.0,"Achievement_%":88.03,"Budget_Utilization_%":87.31,"Performance_Category":"Medium"},{"Record_ID":"ADM-0077","District":"Nagpur","Block":"Parseoni","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"June","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":1060.0,"Actual_Beneficiaries":1104.0,"Budget_Allocated_Lakh":66.03,"Budget_Utilized_Lakh":55.92,"Officer_Name":"M. Thakare","Status":"Completed","Citizen_Satisfaction_Score":50.0,"Achievement_%":104.15,"Budget_Utilization_%":84.69,"Performance_Category":"High"},{"Record_ID":"ADM-0078","District":"Amravati","Block":"Daryapur","Village":"Borgaon","Financial_Year":"2023-24","Month":"January","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":318.0,"Actual_Beneficiaries":239.0,"Budget_Allocated_Lakh":39.76,"Budget_Utilized_Lakh":29.58,"Officer_Name":"V. Meshram","Status":"In Progress","Citizen_Satisfaction_Score":84.0,"Achievement_%":75.16,"Budget_Utilization_%":74.4,"Performance_Category":"Medium"},{"Record_ID":"ADM-0079","District":"Nagpur","Block":"Parseoni","Village":"Nandgaon","Financial_Year":"2023-24","Month":"January","Department":"Rural Development","Scheme_Name":"Village Sanitation Drive","Target_Beneficiaries":206.0,"Actual_Beneficiaries":164.0,"Budget_Allocated_Lakh":76.8,"Budget_Utilized_Lakh":61.33,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":70.0,"Achievement_%":79.61,"Budget_Utilization_%":79.86,"Performance_Category":"Medium"},{"Record_ID":"ADM-0080","District":"Amravati","Block":"Morshi","Village":"Borgaon","Financial_Year":"2023-24","Month":"September","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":600.0,"Actual_Beneficiaries":382.0,"Budget_Allocated_Lakh":46.99,"Budget_Utilized_Lakh":36.28,"Officer_Name":"N. Kale","Status":"Pending","Citizen_Satisfaction_Score":78.0,"Achievement_%":63.67,"Budget_Utilization_%":77.21,"Performance_Category":"Low"},{"Record_ID":"ADM-0081","District":"Amravati","Block":"Chandur Railway","Village":"Kharangana","Financial_Year":"2025-26","Month":"April","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":291.0,"Actual_Beneficiaries":190.0,"Budget_Allocated_Lakh":75.66,"Budget_Utilized_Lakh":76.44,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":61.0,"Achievement_%":65.29,"Budget_Utilization_%":101.03,"Performance_Category":"Low"},{"Record_ID":"ADM-0082","District":"Nagpur","Block":"Kalmeshwar","Village":"Dhamangaon","Financial_Year":"2025-26","Month":"November","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":599.0,"Actual_Beneficiaries":629.0,"Budget_Allocated_Lakh":91.69,"Budget_Utilized_Lakh":90.33,"Officer_Name":"N. Kale","Status":"Completed","Citizen_Satisfaction_Score":69.0,"Achievement_%":105.01,"Budget_Utilization_%":98.52,"Performance_Category":"High"},{"Record_ID":"ADM-0083","District":"Amravati","Block":"Achalpur","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"June","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":747.0,"Actual_Beneficiaries":779.0,"Budget_Allocated_Lakh":40.56,"Budget_Utilized_Lakh":38.79,"Officer_Name":"R. Shende","Status":"Completed","Citizen_Satisfaction_Score":30.0,"Achievement_%":104.28,"Budget_Utilization_%":95.64,"Performance_Category":"High"},{"Record_ID":"ADM-0084","District":"Wardha","Block":"Deoli","Village":"Nandgaon","Financial_Year":"2025-26","Month":"April","Department":"Rural Development","Scheme_Name":"Drinking Water Coverage","Target_Beneficiaries":406.0,"Actual_Beneficiaries":330.0,"Budget_Allocated_Lakh":21.37,"Budget_Utilized_Lakh":19.68,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":95.0,"Achievement_%":81.28,"Budget_Utilization_%":92.09,"Performance_Category":"Medium"},{"Record_ID":"ADM-0085","District":"Amravati","Block":"Achalpur","Village":"Kharangana","Financial_Year":"2025-26","Month":"May","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":713.0,"Actual_Beneficiaries":402.0,"Budget_Allocated_Lakh":67.44,"Budget_Utilized_Lakh":47.02,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":62.0,"Achievement_%":56.38,"Budget_Utilization_%":69.72,"Performance_Category":"Low"},{"Record_ID":"ADM-0086","District":"Nagpur","Block":"Parseoni","Village":"Borgaon","Financial_Year":"2024-25","Month":"April","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":1201.0,"Actual_Beneficiaries":896.0,"Budget_Allocated_Lakh":58.1,"Budget_Utilized_Lakh":34.61,"Officer_Name":"A. Deshmukh","Status":"In Progress","Citizen_Satisfaction_Score":77.0,"Achievement_%":74.6,"Budget_Utilization_%":59.57,"Performance_Category":"Medium"},{"Record_ID":"ADM-0087","District":"Wardha","Block":"Deoli","Village":"Nandgaon","Financial_Year":"2023-24","Month":"December","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":1025.0,"Actual_Beneficiaries":719.0,"Budget_Allocated_Lakh":54.36,"Budget_Utilized_Lakh":43.12,"Officer_Name":"K. Borkar","Status":"In Progress","Citizen_Satisfaction_Score":95.0,"Achievement_%":70.15,"Budget_Utilization_%":79.32,"Performance_Category":"Medium"},{"Record_ID":"ADM-0088","District":"Amravati","Block":"Achalpur","Village":"Dhamangaon","Financial_Year":"2025-26","Month":"November","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":1286.0,"Actual_Beneficiaries":1118.0,"Budget_Allocated_Lakh":70.22,"Budget_Utilized_Lakh":71.32,"Officer_Name":"R. Shende","Status":"In Progress","Citizen_Satisfaction_Score":95.0,"Achievement_%":86.94,"Budget_Utilization_%":101.57,"Performance_Category":"Medium"},{"Record_ID":"ADM-0089","District":"Nagpur","Block":"Umred","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"June","Department":"Education","Scheme_Name":"Digital Classroom Support","Target_Beneficiaries":1370.0,"Actual_Beneficiaries":974.0,"Budget_Allocated_Lakh":58.81,"Budget_Utilized_Lakh":39.45,"Officer_Name":"Unassigned","Status":"In Progress","Citizen_Satisfaction_Score":86.0,"Achievement_%":71.09,"Budget_Utilization_%":67.08,"Performance_Category":"Medium"},{"Record_ID":"ADM-0090","District":"Nagpur","Block":"Kalmeshwar","Village":"Rampur","Financial_Year":"2024-25","Month":"April","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":398.0,"Actual_Beneficiaries":352.0,"Budget_Allocated_Lakh":66.99,"Budget_Utilized_Lakh":44.47,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":78.0,"Achievement_%":88.44,"Budget_Utilization_%":66.38,"Performance_Category":"Medium"},{"Record_ID":"ADM-0091","District":"Nagpur","Block":"Kalmeshwar","Village":"Shivapur","Financial_Year":"2025-26","Month":"March","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":915.0,"Actual_Beneficiaries":666.0,"Budget_Allocated_Lakh":33.22,"Budget_Utilized_Lakh":29.98,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":83.0,"Achievement_%":72.79,"Budget_Utilization_%":90.25,"Performance_Category":"Medium"},{"Record_ID":"ADM-0092","District":"Amravati","Block":"Daryapur","Village":"Nandgaon","Financial_Year":"2025-26","Month":"December","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":925.0,"Actual_Beneficiaries":837.0,"Budget_Allocated_Lakh":12.5,"Budget_Utilized_Lakh":26.16,"Officer_Name":"P. Patil","Status":"In Progress","Citizen_Satisfaction_Score":70.0,"Achievement_%":90.49,"Budget_Utilization_%":209.28,"Performance_Category":"High"},{"Record_ID":"ADM-0093","District":"Wardha","Block":"Seloo","Village":"Sawangi","Financial_Year":"2024-25","Month":"November","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":332.0,"Actual_Beneficiaries":184.0,"Budget_Allocated_Lakh":19.24,"Budget_Utilized_Lakh":10.37,"Officer_Name":"M. Thakare","Status":"Pending","Citizen_Satisfaction_Score":62.0,"Achievement_%":55.42,"Budget_Utilization_%":53.9,"Performance_Category":"Low"},{"Record_ID":"ADM-0094","District":"Amravati","Block":"Chandur Railway","Village":"Ganeshpur","Financial_Year":"2025-26","Month":"February","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":625.0,"Actual_Beneficiaries":469.0,"Budget_Allocated_Lakh":31.13,"Budget_Utilized_Lakh":19.27,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":82.0,"Achievement_%":75.04,"Budget_Utilization_%":61.9,"Performance_Category":"Medium"},{"Record_ID":"ADM-0095","District":"Amravati","Block":"Achalpur","Village":"Dhamangaon","Financial_Year":"2023-24","Month":"January","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":1259.0,"Actual_Beneficiaries":1188.0,"Budget_Allocated_Lakh":53.55,"Budget_Utilized_Lakh":28.92,"Officer_Name":"A. Deshmukh","Status":"Completed","Citizen_Satisfaction_Score":81.0,"Achievement_%":94.36,"Budget_Utilization_%":54.01,"Performance_Category":"High"},{"Record_ID":"ADM-0096","District":"Amravati","Block":"Morshi","Village":"Ashti","Financial_Year":"2024-25","Month":"October","Department":"Women & Child Development","Scheme_Name":"Women Livelihood Support","Target_Beneficiaries":517.0,"Actual_Beneficiaries":319.0,"Budget_Allocated_Lakh":11.42,"Budget_Utilized_Lakh":6.17,"Officer_Name":"M. Thakare","Status":"Pending","Citizen_Satisfaction_Score":65.0,"Achievement_%":61.7,"Budget_Utilization_%":54.03,"Performance_Category":"Low"},{"Record_ID":"ADM-0097","District":"Wardha","Block":"Wardha","Village":"Sawangi","Financial_Year":"2025-26","Month":"November","Department":"Women & Child Development","Scheme_Name":"Nutrition Improvement Programme","Target_Beneficiaries":1000.0,"Actual_Beneficiaries":996.0,"Budget_Allocated_Lakh":19.4,"Budget_Utilized_Lakh":19.21,"Officer_Name":"N. Kale","Status":"In Progress","Citizen_Satisfaction_Score":78.0,"Achievement_%":99.6,"Budget_Utilization_%":99.02,"Performance_Category":"High"},{"Record_ID":"ADM-0098","District":"Nagpur","Block":"Hingna","Village":"Ganeshpur","Financial_Year":"2023-24","Month":"August","Department":"Education","Scheme_Name":"School Attendance Improvement","Target_Beneficiaries":1097.0,"Actual_Beneficiaries":1126.0,"Budget_Allocated_Lakh":74.83,"Budget_Utilized_Lakh":51.45,"Officer_Name":"P. Patil","Status":"Completed","Citizen_Satisfaction_Score":60.0,"Achievement_%":102.64,"Budget_Utilization_%":68.76,"Performance_Category":"High"},{"Record_ID":"ADM-0099","District":"Wardha","Block":"Wardha","Village":"Borgaon","Financial_Year":"2024-25","Month":"May","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":597.0,"Actual_Beneficiaries":581.0,"Budget_Allocated_Lakh":66.38,"Budget_Utilized_Lakh":40.98,"Officer_Name":"M. Thakare","Status":"Completed","Citizen_Satisfaction_Score":90.0,"Achievement_%":97.32,"Budget_Utilization_%":61.74,"Performance_Category":"High"},{"Record_ID":"ADM-0100","District":"Wardha","Block":"Deoli","Village":"Borgaon","Financial_Year":"2023-24","Month":"July","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":189.0,"Actual_Beneficiaries":109.0,"Budget_Allocated_Lakh":48.89,"Budget_Utilized_Lakh":36.7,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":53.0,"Achievement_%":57.67,"Budget_Utilization_%":75.07,"Performance_Category":"Low"},{"Record_ID":"ADM-0101","District":"Amravati","Block":"Morshi","Village":"Borgaon","Financial_Year":"2023-24","Month":"December","Department":"Agriculture","Scheme_Name":"Farmer Training Programme","Target_Beneficiaries":393.0,"Actual_Beneficiaries":342.0,"Budget_Allocated_Lakh":57.98,"Budget_Utilized_Lakh":29.38,"Officer_Name":"V. Meshram","Status":"In Progress","Citizen_Satisfaction_Score":83.0,"Achievement_%":87.02,"Budget_Utilization_%":50.67,"Performance_Category":"Medium"},{"Record_ID":"ADM-0102","District":"Nagpur","Block":"Hingna","Village":"Kharangana","Financial_Year":"2023-24","Month":"July","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":635.0,"Actual_Beneficiaries":544.0,"Budget_Allocated_Lakh":85.53,"Budget_Utilized_Lakh":44.85,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":89.0,"Achievement_%":85.67,"Budget_Utilization_%":52.44,"Performance_Category":"Medium"},{"Record_ID":"ADM-0103","District":"Wardha","Block":"Wardha","Village":"Pimpalgaon","Financial_Year":"2023-24","Month":"December","Department":"Rural Development","Scheme_Name":"Rural Road Maintenance","Target_Beneficiaries":536.0,"Actual_Beneficiaries":320.0,"Budget_Allocated_Lakh":41.44,"Budget_Utilized_Lakh":36.4,"Officer_Name":"P. Patil","Status":"Pending","Citizen_Satisfaction_Score":77.0,"Achievement_%":59.7,"Budget_Utilization_%":87.84,"Performance_Category":"Low"},{"Record_ID":"ADM-0104","District":"Nagpur","Block":"Kalmeshwar","Village":"Ashti","Financial_Year":"2025-26","Month":"December","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":1174.0,"Actual_Beneficiaries":704.0,"Budget_Allocated_Lakh":49.59,"Budget_Utilized_Lakh":27.39,"Officer_Name":"A. Deshmukh","Status":"Pending","Citizen_Satisfaction_Score":57.0,"Achievement_%":59.97,"Budget_Utilization_%":55.23,"Performance_Category":"Low"},{"Record_ID":"ADM-0105","District":"Amravati","Block":"Chandur Railway","Village":"Ganeshpur","Financial_Year":"2023-24","Month":"February","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":1378.0,"Actual_Beneficiaries":1096.0,"Budget_Allocated_Lakh":23.77,"Budget_Utilized_Lakh":14.34,"Officer_Name":"K. Borkar","Status":"In Progress","Citizen_Satisfaction_Score":96.0,"Achievement_%":79.54,"Budget_Utilization_%":60.33,"Performance_Category":"Medium"},{"Record_ID":"ADM-0106","District":"Wardha","Block":"Seloo","Village":"Dhamangaon","Financial_Year":"2024-25","Month":"May","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":350.0,"Actual_Beneficiaries":977.0,"Budget_Allocated_Lakh":18.88,"Budget_Utilized_Lakh":11.48,"Officer_Name":"A. Deshmukh","Status":"In Progress","Citizen_Satisfaction_Score":68.0,"Achievement_%":279.14,"Budget_Utilization_%":60.81,"Performance_Category":"High"},{"Record_ID":"ADM-0107","District":"Wardha","Block":"Arvi","Village":"Rampur","Financial_Year":"2023-24","Month":"November","Department":"Agriculture","Scheme_Name":"Soil Health Card Campaign","Target_Beneficiaries":1132.0,"Actual_Beneficiaries":1017.0,"Budget_Allocated_Lakh":65.0,"Budget_Utilized_Lakh":61.81,"Officer_Name":"V. Meshram","Status":"In Progress","Citizen_Satisfaction_Score":95.0,"Achievement_%":89.84,"Budget_Utilization_%":95.09,"Performance_Category":"Medium"},{"Record_ID":"ADM-0108","District":"Nagpur","Block":"Kalmeshwar","Village":"Ganeshpur","Financial_Year":"2023-24","Month":"December","Department":"Education","Scheme_Name":"Foundational Literacy Mission","Target_Beneficiaries":830.0,"Actual_Beneficiaries":604.0,"Budget_Allocated_Lakh":33.7,"Budget_Utilized_Lakh":28.85,"Officer_Name":"A. Deshmukh","Status":"In Progress","Citizen_Satisfaction_Score":67.0,"Achievement_%":72.77,"Budget_Utilization_%":85.61,"Performance_Category":"Medium"},{"Record_ID":"ADM-0109","District":"Nagpur","Block":"Umred","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"July","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":835.0,"Actual_Beneficiaries":642.0,"Budget_Allocated_Lakh":53.45,"Budget_Utilized_Lakh":42.06,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":73.0,"Achievement_%":76.89,"Budget_Utilization_%":78.69,"Performance_Category":"Medium"},{"Record_ID":"ADM-0110","District":"Wardha","Block":"Seloo","Village":"Nandgaon","Financial_Year":"2023-24","Month":"August","Department":"Education","Scheme_Name":"School Attendance Improvement","Target_Beneficiaries":1016.0,"Actual_Beneficiaries":846.0,"Budget_Allocated_Lakh":15.18,"Budget_Utilized_Lakh":8.84,"Officer_Name":"R. Shende","Status":"In Progress","Citizen_Satisfaction_Score":85.0,"Achievement_%":83.27,"Budget_Utilization_%":58.23,"Performance_Category":"Medium"},{"Record_ID":"ADM-0111","District":"Nagpur","Block":"Umred","Village":"Pimpalgaon","Financial_Year":"2024-25","Month":"December","Department":"Agriculture","Scheme_Name":"Farmer Training Programme","Target_Beneficiaries":785.0,"Actual_Beneficiaries":560.0,"Budget_Allocated_Lakh":50.0,"Budget_Utilized_Lakh":23.04,"Officer_Name":"S. Wankhede","Status":"In Progress","Citizen_Satisfaction_Score":80.0,"Achievement_%":71.34,"Budget_Utilization_%":46.08,"Performance_Category":"Medium"},{"Record_ID":"ADM-0112","District":"Wardha","Block":"Arvi","Village":"Sawangi","Financial_Year":"2024-25","Month":"July","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":1166.0,"Actual_Beneficiaries":718.0,"Budget_Allocated_Lakh":84.69,"Budget_Utilized_Lakh":50.52,"Officer_Name":"N. Kale","Status":"Pending","Citizen_Satisfaction_Score":67.0,"Achievement_%":61.58,"Budget_Utilization_%":59.65,"Performance_Category":"Low"},{"Record_ID":"ADM-0113","District":"Nagpur","Block":"Hingna","Village":"Dhamangaon","Financial_Year":"2023-24","Month":"December","Department":"Agriculture","Scheme_Name":"Farmer Training Programme","Target_Beneficiaries":1070.0,"Actual_Beneficiaries":929.0,"Budget_Allocated_Lakh":48.85,"Budget_Utilized_Lakh":35.29,"Officer_Name":"K. Borkar","Status":"In Progress","Citizen_Satisfaction_Score":48.0,"Achievement_%":86.82,"Budget_Utilization_%":72.24,"Performance_Category":"Medium"},{"Record_ID":"ADM-0114","District":"Amravati","Block":"Daryapur","Village":"Ashti","Financial_Year":"2024-25","Month":"March","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":706.0,"Actual_Beneficiaries":434.0,"Budget_Allocated_Lakh":80.07,"Budget_Utilized_Lakh":66.77,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":51.0,"Achievement_%":61.47,"Budget_Utilization_%":83.39,"Performance_Category":"Low"},{"Record_ID":"ADM-0115","District":"Amravati","Block":"Morshi","Village":"Ashti","Financial_Year":"2024-25","Month":"August","Department":"Health","Scheme_Name":"TB Screening Drive","Target_Beneficiaries":249.0,"Actual_Beneficiaries":185.0,"Budget_Allocated_Lakh":73.64,"Budget_Utilized_Lakh":63.23,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":58.0,"Achievement_%":74.3,"Budget_Utilization_%":85.86,"Performance_Category":"Medium"},{"Record_ID":"ADM-0116","District":"Amravati","Block":"Daryapur","Village":"Sawangi","Financial_Year":"2024-25","Month":"April","Department":"Women & Child Development","Scheme_Name":"Anganwadi Service Strengthening","Target_Beneficiaries":524.0,"Actual_Beneficiaries":341.0,"Budget_Allocated_Lakh":40.01,"Budget_Utilized_Lakh":38.26,"Officer_Name":"K. Borkar","Status":"Pending","Citizen_Satisfaction_Score":52.0,"Achievement_%":65.08,"Budget_Utilization_%":95.63,"Performance_Category":"Low"},{"Record_ID":"ADM-0117","District":"Nagpur","Block":"Umred","Village":"Sawangi","Financial_Year":"2025-26","Month":"April","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":187.0,"Actual_Beneficiaries":108.0,"Budget_Allocated_Lakh":85.55,"Budget_Utilized_Lakh":55.59,"Officer_Name":"N. Kale","Status":"Pending","Citizen_Satisfaction_Score":87.0,"Achievement_%":57.75,"Budget_Utilization_%":64.98,"Performance_Category":"Low"},{"Record_ID":"ADM-0118","District":"Wardha","Block":"Wardha","Village":"Ashti","Financial_Year":"2024-25","Month":"March","Department":"Agriculture","Scheme_Name":"Micro Irrigation Support","Target_Beneficiaries":928.0,"Actual_Beneficiaries":581.0,"Budget_Allocated_Lakh":83.19,"Budget_Utilized_Lakh":69.82,"Officer_Name":"M. Thakare","Status":"Pending","Citizen_Satisfaction_Score":52.0,"Achievement_%":62.61,"Budget_Utilization_%":83.93,"Performance_Category":"Low"},{"Record_ID":"ADM-0119","District":"Nagpur","Block":"Kalmeshwar","Village":"Kharangana","Financial_Year":"2023-24","Month":"January","Department":"Health","Scheme_Name":"Mobile Health Camp","Target_Beneficiaries":811.0,"Actual_Beneficiaries":0.0,"Budget_Allocated_Lakh":13.08,"Budget_Utilized_Lakh":10.54,"Officer_Name":"K. Borkar","Status":"In Progress","Citizen_Satisfaction_Score":60.0,"Achievement_%":0.0,"Budget_Utilization_%":80.58,"Performance_Category":"Low"},{"Record_ID":"ADM-0120","District":"Nagpur","Block":"Kalmeshwar","Village":"Dhamangaon","Financial_Year":"2023-24","Month":"July","Department":"Education","Scheme_Name":"Digital Classroom Support","Target_Beneficiaries":853.0,"Actual_Beneficiaries":766.0,"Budget_Allocated_Lakh":10.39,"Budget_Utilized_Lakh":5.72,"Officer_Name":"M. Thakare","Status":"In Progress","Citizen_Satisfaction_Score":67.0,"Achievement_%":89.8,"Budget_Utilization_%":55.05,"Performance_Category":"Medium"}];
+    let chartInstances = {};
+
+    function switchPage(pageNo) {
+      document.querySelectorAll('.page-tab').forEach((t, idx) => {
+        t.classList.toggle('active', idx === pageNo - 1);
+      });
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`page-${i}`).style.display = (i === pageNo) ? 'block' : 'none';
+      }
+      renderVisuals();
+    }
+
+    function getFilteredData() {
+      const dist = document.getElementById('slicer-district').value;
+      const dept = document.getElementById('slicer-dept').value;
+      const fy = document.getElementById('slicer-fy').value;
+      const stat = document.getElementById('slicer-status').value;
+
+      return masterData.filter(d => {
+        if (dist !== 'All' && d.District !== dist) return false;
+        if (dept !== 'All' && d.Department !== dept) return false;
+        if (fy !== 'All' && d.Financial_Year !== fy) return false;
+        if (stat !== 'All' && d.Status !== stat) return false;
+        return true;
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('slicer-district').value = 'All';
+      document.getElementById('slicer-dept').value = 'All';
+      document.getElementById('slicer-fy').value = 'All';
+      document.getElementById('slicer-status').value = 'All';
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const data = getFilteredData();
+      document.getElementById('filter-count').textContent = data.length;
+
+      // Update KPI Cards
+      const target = data.reduce((acc, d) => acc + (d.Target_Beneficiaries || 0), 0);
+      const actual = data.reduce((acc, d) => acc + (d.Actual_Beneficiaries || 0), 0);
+      const alloc = data.reduce((acc, d) => acc + (d.Budget_Allocated_Lakh || 0), 0);
+      const util = data.reduce((acc, d) => acc + (d.Budget_Utilized_Lakh || 0), 0);
+      const sat = data.length ? (data.reduce((acc, d) => acc + (d.Citizen_Satisfaction_Score || 0), 0) / data.length) : 0;
+      const achPct = target ? (actual / target * 100) : 0;
+      const utilPct = alloc ? (util / alloc * 100) : 0;
+
+      document.getElementById('kpi-target').textContent = Math.round(target).toLocaleString('en-IN');
+      document.getElementById('kpi-actual').textContent = Math.round(actual).toLocaleString('en-IN');
+      document.getElementById('kpi-ach').textContent = achPct.toFixed(1) + '%';
+      document.getElementById('kpi-alloc').textContent = '₹' + Math.round(alloc).toLocaleString('en-IN') + ' L';
+      document.getElementById('kpi-util').textContent = '₹' + Math.round(util).toLocaleString('en-IN') + ' L';
+      document.getElementById('kpi-sat').textContent = sat.toFixed(1);
+
+      renderVisuals();
+    }
+
+    function renderVisuals() {
+      const data = getFilteredData();
+
+      // Page 1: District Table
+      const distMap = {};
+      data.forEach(d => {
+        if (!distMap[d.District]) {
+          distMap[d.District] = { target: 0, actual: 0, alloc: 0, util: 0, satSum: 0, count: 0 };
+        }
+        distMap[d.District].target += d.Target_Beneficiaries || 0;
+        distMap[d.District].actual += d.Actual_Beneficiaries || 0;
+        distMap[d.District].alloc += d.Budget_Allocated_Lakh || 0;
+        distMap[d.District].util += d.Budget_Utilized_Lakh || 0;
+        distMap[d.District].satSum += d.Citizen_Satisfaction_Score || 0;
+        distMap[d.District].count++;
+      });
+
+      const tbody = document.getElementById('table-district-scorecard');
+      if (tbody) {
+        tbody.innerHTML = '';
+        Object.keys(distMap).sort().forEach(dist => {
+          const item = distMap[dist];
+          const ach = item.target ? (item.actual / item.target * 100).toFixed(2) : '0.00';
+          const uPct = item.alloc ? (item.util / item.alloc * 100).toFixed(2) : '0.00';
+          const avgSat = item.count ? (item.satSum / item.count).toFixed(2) : '0.00';
+          const rankBadge = dist === 'Wardha' ? '<span class="badge-pill badge-high">Rank 1 (Best)</span>' : (dist === 'Amravati' ? 'Rank 2' : 'Rank 3');
+
+          tbody.innerHTML += `
+            <tr>
+              <td style="font-weight:700;">${dist}</td>
+              <td>${Math.round(item.target).toLocaleString('en-IN')}</td>
+              <td>${Math.round(item.actual).toLocaleString('en-IN')}</td>
+              <td style="font-weight:700; color:#107C41;">${ach}%</td>
+              <td>₹${item.alloc.toFixed(2)}</td>
+              <td>₹${item.util.toFixed(2)}</td>
+              <td>${uPct}%</td>
+              <td>${avgSat}</td>
+              <td>${rankBadge}</td>
+            </tr>
+          `;
+        });
+      }
+
+      // District Target vs Actual Chart
+      renderChart('chartDistTargetActual', 'bar', {
+        labels: Object.keys(distMap),
+        datasets: [
+          { label: 'Target Beneficiaries', data: Object.values(distMap).map(v => v.target), backgroundColor: '#605E5C' },
+          { label: 'Actual Beneficiaries', data: Object.values(distMap).map(v => v.actual), backgroundColor: '#118DFF' }
+        ]
+      });
+
+      // Performance Categories Donut
+      const highC = data.filter(d => d.Performance_Category === 'High').length;
+      const medC = data.filter(d => d.Performance_Category === 'Medium').length;
+      const lowC = data.filter(d => d.Performance_Category === 'Low').length;
+
+      renderChart('chartPerfDonut', 'doughnut', {
+        labels: ['High (>=90%)', 'Medium (70-89%)', 'Low (<70%)'],
+        datasets: [{
+          data: [highC, medC, lowC],
+          backgroundColor: ['#107C41', '#F2C811', '#D83B01']
+        }]
+      });
+
+      // Page 2: Department Visuals
+      const deptMap = {};
+      data.forEach(d => {
+        if (!deptMap[d.Department]) {
+          deptMap[d.Department] = { target: 0, actual: 0, alloc: 0, util: 0, satSum: 0, count: 0 };
+        }
+        deptMap[d.Department].target += d.Target_Beneficiaries || 0;
+        deptMap[d.Department].actual += d.Actual_Beneficiaries || 0;
+        deptMap[d.Department].alloc += d.Budget_Allocated_Lakh || 0;
+        deptMap[d.Department].util += d.Budget_Utilized_Lakh || 0;
+        deptMap[d.Department].satSum += d.Citizen_Satisfaction_Score || 0;
+        deptMap[d.Department].count++;
+      });
+
+      const deptLabels = Object.keys(deptMap);
+      const deptAch = deptLabels.map(k => (deptMap[k].actual / deptMap[k].target * 100).toFixed(1));
+      const deptAlloc = deptLabels.map(k => deptMap[k].alloc.toFixed(1));
+      const deptUtil = deptLabels.map(k => deptMap[k].util.toFixed(1));
+      const deptSat = deptLabels.map(k => (deptMap[k].satSum / deptMap[k].count).toFixed(1));
+
+      renderChart('chartDeptAchievement', 'bar', {
+        labels: deptLabels,
+        datasets: [{ label: 'Achievement %', data: deptAch, backgroundColor: '#107C41' }]
+      }, { indexAxis: 'y' });
+
+      renderChart('chartDeptBudget', 'bar', {
+        labels: deptLabels,
+        datasets: [
+          { label: 'Budget Allocated (₹ L)', data: deptAlloc, backgroundColor: '#323130' },
+          { label: 'Budget Utilized (₹ L)', data: deptUtil, backgroundColor: '#118DFF' }
+        ]
+      });
+
+      renderChart('chartDeptSat', 'bar', {
+        labels: deptLabels,
+        datasets: [{ label: 'Satisfaction Score (0-100)', data: deptSat, backgroundColor: '#F2C811' }]
+      });
+
+      // Page 3: Block Rankings
+      const blockMap = {};
+      data.forEach(d => {
+        const bKey = `${d.Block} (${d.District})`;
+        if (!blockMap[bKey]) {
+          blockMap[bKey] = { block: d.Block, district: d.District, target: 0, actual: 0, alloc: 0, util: 0, satSum: 0, count: 0 };
+        }
+        blockMap[bKey].target += d.Target_Beneficiaries || 0;
+        blockMap[bKey].actual += d.Actual_Beneficiaries || 0;
+        blockMap[bKey].alloc += d.Budget_Allocated_Lakh || 0;
+        blockMap[bKey].util += d.Budget_Utilized_Lakh || 0;
+        blockMap[bKey].satSum += d.Citizen_Satisfaction_Score || 0;
+        blockMap[bKey].count++;
+      });
+
+      const blockList = Object.values(blockMap).map(b => ({
+        ...b,
+        ach: b.target ? (b.actual / b.target * 100) : 0,
+        uPct: b.alloc ? (b.util / b.alloc * 100) : 0,
+        sat: b.count ? (b.satSum / b.count) : 0
+      })).sort((a, b) => b.ach - a.ach);
+
+      const topTbody = document.getElementById('table-top-blocks');
+      if (topTbody) {
+        topTbody.innerHTML = '';
+        blockList.slice(0, 5).forEach((b, i) => {
+          topTbody.innerHTML += `
+            <tr>
+              <td><strong>#${i+1}</strong></td>
+              <td>${b.block}</td>
+              <td>${b.district}</td>
+              <td>${Math.round(b.target).toLocaleString('en-IN')}</td>
+              <td>${Math.round(b.actual).toLocaleString('en-IN')}</td>
+              <td style="font-weight:700; color:#107C41;">${b.ach.toFixed(1)}%</td>
+              <td>${b.uPct.toFixed(1)}%</td>
+              <td>${b.sat.toFixed(1)}</td>
+            </tr>
+          `;
+        });
+      }
+
+      const botTbody = document.getElementById('table-bot-blocks');
+      if (botTbody) {
+        botTbody.innerHTML = '';
+        blockList.slice(-5).reverse().forEach((b, i) => {
+          botTbody.innerHTML += `
+            <tr>
+              <td><strong>#${blockList.length - i}</strong></td>
+              <td>${b.block}</td>
+              <td>${b.district}</td>
+              <td>${Math.round(b.target).toLocaleString('en-IN')}</td>
+              <td>${Math.round(b.actual).toLocaleString('en-IN')}</td>
+              <td style="font-weight:700; color:#D83B01;">${b.ach.toFixed(1)}%</td>
+              <td>${b.uPct.toFixed(1)}%</td>
+              <td>${b.sat.toFixed(1)}</td>
+            </tr>
+          `;
+        });
+      }
+
+      renderChart('chartAllBlocks', 'bar', {
+        labels: blockList.map(b => b.block),
+        datasets: [{
+          label: 'Achievement %',
+          data: blockList.map(b => b.ach.toFixed(1)),
+          backgroundColor: blockList.map(b => b.ach >= 90 ? '#107C41' : (b.ach >= 70 ? '#F2C811' : '#D83B01'))
+        }]
+      });
+
+      // Page 4: DQ Breakdown
+      renderChart('chartDqBreakdown', 'doughnut', {
+        labels: ['Duplicates (6)', 'Missing Values (12)', 'Invalid Categories (9)', 'Sign & Domain (5)', 'Outliers (4)'],
+        datasets: [{
+          data: [6, 12, 9, 5, 4],
+          backgroundColor: ['#A80000', '#D83B01', '#F2C811', '#118DFF', '#8A8886']
+        }]
+      });
+    }
+
+    function renderChart(canvasId, type, data, extraOptions = {}) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+      chartInstances[canvasId] = new Chart(ctx, {
+        type,
+        data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+          ...extraOptions
+        }
+      });
+    }
+
+    // Init
+    applyFilters();
+  </script>
+</body>
+</html>
